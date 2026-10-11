@@ -1,11 +1,16 @@
 /** WCAG 2.x relative luminance and contrast ratio, for tests and host-app checks. */
+import { assertHex } from "./theme";
+
+// 0.03928 is the WCAG 2.0 published constant; the sRGB-exact 0.04045 differs by < 1e-4.
+const LINEAR_THRESHOLD = 0.03928;
 
 function channel(value: number): number {
   const c = value / 255;
-  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  return c <= LINEAR_THRESHOLD ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 }
 
 export function relativeLuminance(hex: string): number {
+  assertHex(hex);
   const n = parseInt(hex.slice(1), 16);
   const r = (n >> 16) & 0xff;
   const g = (n >> 8) & 0xff;

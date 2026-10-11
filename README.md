@@ -12,8 +12,8 @@ so edge cases like near-grey or near-black seeds are already handled.
 ```ts
 import { applyTheme, buildTheme } from "monochromation";
 
-const tokens = buildTheme("#3b82f6", "dark");   // seed, mode, optional contrast [-1, 1]
-applyTheme(tokens, "dark");                     // sets --mc-* on <html>, data-theme="dark"
+const theme = buildTheme("#3b82f6", "dark");  // seed (#rrggbb), mode, optional contrast [-1, 1]
+applyTheme(theme);                            // sets --mc-* and color-scheme on <html>, data-theme="dark"
 ```
 
 Then in CSS:
@@ -23,8 +23,12 @@ body   { background: var(--mc-background); color: var(--mc-on-background); }
 button { background: var(--mc-primary);    color: var(--mc-on-primary); }
 ```
 
-`themeToCss(tokens)` returns the same variables as a CSS string for server rendering or static
-export. Full token list and contrast rules: [docs/spec.md](docs/spec.md).
+`themeToCss(theme)` returns the same variables as a CSS string for server rendering or static
+export. Seeds must be 6-digit hex; the demo's colour picker always produces that form. Full
+token list and contrast rules: [docs/spec.md](docs/spec.md).
+
+Consume from another build via `npm run build:lib`, which emits `dist/` as ESM, CommonJS and
+type declarations with the colour engine bundled in, so plain Node, SSR and Jest all work.
 
 ## Layout
 
@@ -32,7 +36,7 @@ export. Full token list and contrast rules: [docs/spec.md](docs/spec.md).
 |---|---|
 | `src/theme.ts` | `buildTheme`, `themeToCss`, `applyTheme`, token names |
 | `src/contrast.ts` | WCAG contrast ratio helper |
-| `src/demo.ts`, `index.html` | demo page with picker, mode toggle, contrast slider |
+| `src/demo.ts`, `index.html` | demo page with picker, mode toggle, contrast slider; follows the system scheme on load |
 | `test/` | vitest suite, including a contrast sweep over awkward seeds |
 | `docs/spec.md` | token spec |
 | `.env.example` | required environment variables, placeholders only (none yet) |
@@ -44,7 +48,7 @@ npm install
 npm run dev        # demo at the printed localhost URL
 npm test
 npm run typecheck
-npm run build
+npm run build      # build:lib (dist/, the package) + build:demo (dist-demo/)
 ```
 
 ## Status

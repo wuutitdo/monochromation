@@ -8,12 +8,12 @@ import {
 } from "@material/material-color-utilities";
 
 export type Mode = "light" | "dark";
-export type Tokens = Readonly<Record<string, string>>;
 
 export const TOKEN_PREFIX = "--mc-";
 const HEX_PATTERN = /^#[0-9a-f]{6}$/i;
+const TOKEN_NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 
-/** Material 3 colour roles exposed as tokens, in `kebab-case`. */
+/** Material 3 colour roles exposed as tokens. */
 const ROLES = [
   "primary",
   "onPrimary",
@@ -55,10 +55,34 @@ const ROLES = [
 
 type Role = (typeof ROLES)[number];
 
-export const TOKEN_NAMES: readonly string[] = ROLES.map(toKebab);
+type Kebab<S extends string> = S extends `${infer Head}${infer Tail}`
+  ? Head extends Uppercase<Head>
+    ? Head extends Lowercase<Head>
+      ? `${Head}${Kebab<Tail>}`
+      : `-${Lowercase<Head>}${Kebab<Tail>}`
+    : `${Head}${Kebab<Tail>}`
+  : S;
+
+/** Token name in `kebab-case`, e.g. `on-primary-container`. */
+export type TokenName = Kebab<Role>;
+export type Tokens = Readonly<Record<TokenName, string>>;
+
+/** A built theme: the inputs it came from plus every token as a hex colour. */
+export interface Theme {
+  readonly seed: string;
+  readonly mode: Mode;
+  readonly contrast: number;
+  readonly tokens: Tokens;
+}
+
+function toKebab<S extends string>(role: S): Kebab<S> {
+  return role.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`) as Kebab<S>;
+}
+
+export const TOKEN_NAMES: readonly TokenName[] = ROLES.map((role) => toKebab(role));
 
 /** Pairs of (text role, base role) that must stay readable. */
-export const CONTRAST_PAIRS: ReadonlyArray<readonly [string, string]> = [
+export const CONTRAST_PAIRS: ReadonlyArray<readonly [TokenName, TokenName]> = [
   ["on-primary", "primary"],
   ["on-primary-container", "primary-container"],
   ["on-secondary", "secondary"],
@@ -73,13 +97,13 @@ export const CONTRAST_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["inverse-on-surface", "inverse-surface"],
 ];
 
-function toKebab(role: string): string {
-  return role.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+export function isHexColor(value: string): boolean {
+  return HEX_PATTERN.test(value);
 }
 
-function assertHex(seed: string): void {
-  if (!HEX_PATTERN.test(seed)) {
-    throw new Error(`Seed must be a #rrggbb hex colour, got "${seed}"`);
+export function assertHex(value: string, what = "Colour"): void {
+  if (!isHexColor(value)) {
+    throw new Error(`${what} must be a #rrggbb hex colour, got "${value}"`);
   }
 }
 
@@ -94,37 +118,49 @@ function roleHex(scheme: DynamicScheme, role: Role): string {
 }
 
 /**
- * Build the full token set for one seed colour.
+ * Build the full theme for one seed colour.
  * Pure: same inputs always give the same output.
  */
-export function buildTheme(seed: string, mode: Mode, contrast = 0): Tokens {
-  assertHex(seed);
+export function buildTheme(seed: string, mode: Mode, contrast = 0): Theme {
+  assertHex(seed, "Seed");
   assertContrast(contrast);
-  const scheme = new SchemeTonalSpot(
-    Hct.fromInt(argbFromHex(seed)),
-    mode === "dark",
-    contrast,
-  );
+  const scheme = new SchemeTonalSpot(Hct.fromInt(argbFromHex(seed)), mode === "dark", contrast);
   const entries = ROLES.map((role) => [toKebab(role), roleHex(scheme, role)] as const);
-  return Object.freeze(Object.fromEntries(entries));
+  const tokens = Object.freeze(Object.fromEntries(entries)) as Tokens;
+  return Object.freeze({ seed: seed.toLowerCase(), mode, contrast, tokens });
 }
 
-/** Render tokens as a CSS rule of custom properties. */
-export function themeToCss(tokens: Tokens, selector = ":root"): string {
-  const lines = Object.entries(tokens).map(
+function assertTokens(tokens: Tokens): void {
+  for (const [name, hex] of Object.entries(tokens)) {
+    if (!TOKEN_NAME_PATTERN.test(name)) throw new Error(`Invalid token name "${name}"`);
+    assertHex(hex, `Token ${name}`);
+  }
+}
+
+/**
+ * Render a theme as a CSS rule of custom properties plus `color-scheme`.
+ * `selector` is trusted: pass only values you wrote yourself.
+ * For a static stylesheet with both modes, call twice:
+ * `themeToCss(light)` and `themeToCss(dark, '[data-theme="dark"]')`.
+ */
+export function themeToCss(theme: Theme, selector = ":root"): string {
+  assertTokens(theme.tokens);
+  const lines = Object.entries(theme.tokens).map(
     ([name, hex]) => `  ${TOKEN_PREFIX}${name}: ${hex};`,
   );
-  return `${selector} {\n${lines.join("\n")}\n}\n`;
+  return `${selector} {\n  color-scheme: ${theme.mode};\n${lines.join("\n")}\n}\n`;
 }
 
-/** Write tokens onto an element's inline style and tag the mode. Idempotent. */
-export function applyTheme(
-  tokens: Tokens,
-  mode: Mode,
-  root: HTMLElement = document.documentElement,
-): void {
-  for (const [name, hex] of Object.entries(tokens)) {
-    root.style.setProperty(`${TOKEN_PREFIX}${name}`, hex);
+/** Write a theme onto an element's inline style and tag the mode. Idempotent. */
+export function applyTheme(theme: Theme, root?: HTMLElement): void {
+  const target = root ?? (typeof document === "undefined" ? undefined : document.documentElement);
+  if (!target) {
+    throw new Error("applyTheme needs a root element when no document exists");
   }
-  root.dataset.theme = mode;
+  assertTokens(theme.tokens);
+  for (const [name, hex] of Object.entries(theme.tokens)) {
+    target.style.setProperty(`${TOKEN_PREFIX}${name}`, hex);
+  }
+  target.style.colorScheme = theme.mode;
+  target.dataset.theme = theme.mode;
 }

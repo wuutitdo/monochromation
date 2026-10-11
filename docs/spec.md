@@ -28,17 +28,29 @@ roles so the mapping to any component library is one lookup.
 
 ## Contrast floor
 
-Text roles (`on-*`) against their base: ≥ 4.5:1 at `contrast = 0`. Guaranteed by the tonal
-scheme (Material 3 tone pairs), not by post-hoc checking; the test suite still asserts it for a
-sweep of seeds including near-grey and near-black ones.
+Text roles (`on-*`) against their base, measured by the test sweep over eight awkward seeds
+(near-grey, near-black, near-white, max-chroma) in both modes:
+
+| `contrast` | Floor on every `on-*` pair | WCAG level |
+|---|---|---|
+| `0` | ≥ 4.5:1 | AA |
+| `1` | ≥ 7:1 | AAA |
+| `-1` | below 3:1 on some pairs in dark mode | **none**; opt-in only |
+
+The floors come from Material 3's tone pairs, not from post-hoc fixing. Reduced contrast is a
+user preference the host may expose; it is not an accessible default.
 
 ## Runtime behaviour
 
-- `buildTheme(seed, mode, contrast?)` → `Record<string, string>` of token name → hex. Pure.
-- `themeToCss(tokens, selector?)` → CSS text, variables scoped to `:root` by default.
-- `applyTheme(tokens, root?)` → sets the variables on an element's inline style. Idempotent.
-- Mode is a data attribute on the root: `data-theme="light" | "dark"`. Switching mode re-runs
-  `buildTheme` with the same seed.
+- `buildTheme(seed, mode, contrast?)` → `Theme { seed, mode, contrast, tokens }`; `tokens` is
+  token name → hex. Pure and frozen.
+- `themeToCss(theme, selector?)` → CSS text: `color-scheme` plus the variables, scoped to
+  `:root` by default. `selector` is trusted input. For a static stylesheet with both modes, call
+  twice: `themeToCss(light)` and `themeToCss(dark, '[data-theme="dark"]')`.
+- `applyTheme(theme, root?)` → sets the variables and `color-scheme` on an element's inline
+  style and tags it `data-theme="light" | "dark"`. Idempotent. Throws without a root when no
+  `document` exists (server side).
+- Switching mode re-runs `buildTheme` with the same seed.
 - Persisting the seed is the host app's job. The library stores nothing.
 
 ## Non-goals (for now)
