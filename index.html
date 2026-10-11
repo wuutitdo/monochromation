@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Monochromation</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font: 16px/1.5 system-ui, sans-serif;
+        background: var(--mc-background);
+        color: var(--mc-on-background);
+        transition: background-color 0.2s, color 0.2s;
+      }
+      header {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding: 16px;
+        background: var(--mc-surface-container);
+        color: var(--mc-on-surface);
+        border-bottom: 1px solid var(--mc-outline-variant);
+      }
+      header h1 { font-size: 18px; margin: 0; flex: 1; }
+      label { display: inline-flex; gap: 8px; align-items: center; }
+      input[type="color"] { width: 40px; height: 32px; border: 1px solid var(--mc-outline); background: none; }
+      main { padding: 16px; display: grid; gap: 16px; max-width: 960px; margin: 0 auto; }
+      .card {
+        padding: 16px;
+        border-radius: 12px;
+        background: var(--mc-surface-container-low);
+        color: var(--mc-on-surface);
+        border: 1px solid var(--mc-outline-variant);
+      }
+      .btn {
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 0;
+        font: inherit;
+        cursor: pointer;
+      }
+      .btn-primary { background: var(--mc-primary); color: var(--mc-on-primary); }
+      .btn-tonal { background: var(--mc-secondary-container); color: var(--mc-on-secondary-container); }
+      .btn-outline { background: none; color: var(--mc-primary); border: 1px solid var(--mc-outline); }
+      .btn-error { background: var(--mc-error-container); color: var(--mc-on-error-container); }
+      .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+      .swatch { padding: 8px; border-radius: 8px; font-size: 12px; min-height: 56px; border: 1px solid var(--mc-outline-variant); }
+      .snack {
+        background: var(--mc-inverse-surface);
+        color: var(--mc-inverse-on-surface);
+        padding: 12px 16px;
+        border-radius: 8px;
+      }
+      .snack b { color: var(--mc-inverse-primary); }
+      pre { font-size: 12px; overflow: auto; margin: 0; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Monochromation</h1>
+      <label>Seed <input id="seed" type="color" value="#3b82f6" /></label>
+      <label>Contrast <input id="contrast" type="range" min="-1" max="1" step="0.5" value="0" /></label>
+      <button id="mode" class="btn btn-outline" type="button">Dark</button>
+    </header>
+    <main>
+      <section class="card">
+        <h2>Components</h2>
+        <p>Every colour here derives from the seed. Change it; nothing else is touched.</p>
+        <button class="btn btn-primary" type="button">Primary</button>
+        <button class="btn btn-tonal" type="button">Tonal</button>
+        <button class="btn btn-outline" type="button">Outline</button>
+        <button class="btn btn-error" type="button">Error</button>
+      </section>
+      <div class="snack">Saved. <b>Undo</b></div>
+      <section class="card">
+        <h2>Tokens</h2>
+        <div id="swatches" class="swatches"></div>
+      </section>
+      <section class="card">
+        <h2>CSS</h2>
+        <pre id="css"></pre>
+      </section>
+    </main>
+    <script type="module" src="/src/demo.ts"></script>
+  </body>
+</html>
