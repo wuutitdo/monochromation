@@ -51,6 +51,15 @@ npm run typecheck
 npm run build      # build:lib (dist/, the package) + build:demo (dist-demo/)
 ```
 
+## Install in another project
+
+```
+npm i github:wuutitdo/monochromation#v1.0.0
+```
+
+The `prepare` script builds `dist/` on install, so no committed build output is needed.
+Always install as a dependency; never copy `src/` into a client repository. License: MIT.
+
 ## Status
 
 Core library and demo working. Not yet: image-based seed extraction, named presets, native ports.

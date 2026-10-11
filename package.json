@@ -8,9 +8,10 @@
     "build": "npm run build:lib && npm run build:demo",
     "typecheck": "tsc --noEmit",
     "build:lib": "vite build --mode lib && tsc -p tsconfig.build.json",
-    "build:demo": "vite build"
+    "build:demo": "vite build",
+    "prepare": "npm run build:lib"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "private": true,
   "dependencies": {
@@ -33,5 +34,9 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wuutitdo/monochromation.git"
+  }
 }
